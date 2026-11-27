@@ -1,3 +1,11 @@
+## [Unreleased]
+
+### Fixed
+- NullReferenceException in `AutoSailsControlSail.Start()` for sails without a hoist winch (e.g. topsails). The controller now removes itself from such sails.
+- `ArgumentOutOfRangeException` risk when a sail has no angle winch.
+- Input handler ignores calls from destroyed sails.
+
+
 ## [1.2.3] - 2025-08-02
 
 ### Fixed 
