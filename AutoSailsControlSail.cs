@@ -68,11 +68,22 @@ namespace AutoSails
                 }
             }
 
-            reverseReefing = (bool)Traverse.Create(hoistWinch).Field("reverseReefing").GetValue();
-            boat = (PurchasableBoat)Traverse.Create(hoistButton).Field("boat").GetValue();
+            // Topsails, sails without their own hoist winch, or sails whose winches do not exist yet
+            // have nothing to automate. Bail out instead of throwing a NullReferenceException.
+            if (hoistWinch == null || hoistButton == null)
+            {
+                Destroy(this);
+                return;
+            }
+
+            reverseReefing = Traverse.Create(hoistWinch).Field("reverseReefing").GetValue() is bool rr && rr;
+            boat = Traverse.Create(hoistButton).Field("boat").GetValue() as PurchasableBoat;
 
             GameEvents.OnPlayerInput += (_, __) =>
             {
+                // The handler is never unsubscribed, so ignore calls once this sail has been destroyed
+                // (e.g. after a scene reload) instead of acting on a dead component.
+                if (this == null) return;
                 if (AutoSailsMain.hoistSails.Value.IsDown() && canControl)
                 {
                     hoistSails = !hoistSails;
@@ -300,16 +311,16 @@ namespace AutoSails
                             (Mathf.Abs(Vector3.SignedAngle(boat.transform.forward, sail.apparentWind, Vector3.up)) > 8)
                         )
                         {
-                            TightenSheetRope(angleButtons[0]);
+                            if (angleButtons.Count > 0) TightenSheetRope(angleButtons[0]);
                         }
                         else
                         {
-                            PrimitiveSailControl(angleButtons[0]);
+                            if (angleButtons.Count > 0) PrimitiveSailControl(angleButtons[0]);
                         }
                     }
                     else
                     {
-                        PrimitiveSailControl(angleButtons[0]);
+                        if (angleButtons.Count > 0) PrimitiveSailControl(angleButtons[0]);
                     }
                 }
                 else if (sail.category is SailCategory.staysail)
@@ -404,7 +415,7 @@ namespace AutoSails
                 // furling sails automation
                 if (sail.category is SailCategory.junk || sail.category is SailCategory.gaff || sail.category is SailCategory.lateen)
                 {
-                    TightenSheetRope(angleButtons[0]);
+                    if (angleButtons.Count > 0) TightenSheetRope(angleButtons[0]);
                 }
                 else if (sail.category is SailCategory.staysail)
                 {
